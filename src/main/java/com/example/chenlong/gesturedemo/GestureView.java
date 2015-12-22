@@ -197,7 +197,7 @@ public class GestureView extends View {
 
             int dx = nextChild.x - startChild.x;
             int dy = nextChild.y - startChild.y;
-            // 计算角度
+            //  计算角度
             int angle = (int) Math.toDegrees(Math.atan2(dy, dx)) + 90;
             canvas.save();
             canvas.translate(startChild.x, startChild.y);
