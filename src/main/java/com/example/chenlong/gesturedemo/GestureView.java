@@ -17,34 +17,83 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Administrator on 2015-12-22 0022.
+ * Created by Long
+ * date： 2015-12-22 0022.
  * email: github888888@163.com
  */
 public class GestureView extends View {
     private static final String TAG = "GestureView";
     private Context context;
+    /**
+     * 控件的寬度
+     */
     private int mWidth;
+    /**
+     * 控件的高度
+     */
     private int mHeight;
-
+    /**
+     * 屏幕宽度
+     */
     private int screenWidth;
+    /**
+     * 屏幕高度
+     */
     private int screenHeight;
+    /**
+     * 屏幕密度，不需要资源文件
+     */
     private float dencity;
-
+    /**
+     * 外部空心圓选中画笔
+     **/
     private Paint outdeepBluePaint;
+    /**
+     * 外部空心圆未选中画笔
+     */
     private Paint outlightBluePaint;
+    /**
+     * 内部实心圆选中画笔
+     */
     private Paint indeepBluePaint;
+    /**
+     * 连线画笔
+     */
     private Paint linePaint;
-
+    /**
+     * 圆列表信息
+     */
     private List<CircleInfo> list;
+    /**
+     * 初始密码
+     */
     private List<Integer> rowPasswordlist = new ArrayList<Integer>();
+    /**
+     * 输入密码
+     */
     private List<Integer> passwordList;
 
+    /**
+     * 手指移动的X位置信息，只相对于本控件
+     */
     private float curX;
+    /**
+     * 手指移动的Y位置信息，只相对于本控件
+     */
     private float curY;
 
+    /**
+     * 上一个圆信息，用于画线
+     */
     private CircleInfo pre = null;
+    /**
+     * 箭头信息，用于绘制箭头
+     */
     private Path path;
 
+    /**
+     * 手指离开屏幕的标志位，用于控制显示箭头
+     */
     private boolean isUP = false;
 
     public GestureView(Context context) {
@@ -70,7 +119,7 @@ public class GestureView extends View {
         screenHeight = metrics.heightPixels;
         dencity = metrics.density;
 
-        // 考虑横屏的问题
+        // 考虑横屏的问题，显示为正方形
         screenWidth = screenWidth < screenHeight ? screenWidth : screenHeight;
 
         outdeepBluePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -91,6 +140,7 @@ public class GestureView extends View {
         linePaint.setColor(0xFF00009C);
         linePaint.setStrokeWidth(2 * dencity);
 
+        // 'Z'型密码
         rowPasswordlist.add(0);
         rowPasswordlist.add(1);
         rowPasswordlist.add(2);
@@ -107,6 +157,7 @@ public class GestureView extends View {
         int heightsize = MeasureSpec.getSize(heightMeasureSpec);
         int heightmode = MeasureSpec.getMode(heightMeasureSpec);
 
+        // 测量宽度，如果是wrapcontent就指定为屏幕宽度的 4/5
         if (MeasureSpec.EXACTLY == widthmode) {
             mWidth = widthsize;
         } else {
@@ -116,6 +167,7 @@ public class GestureView extends View {
             }
         }
 
+        // 测量宽度，如果是wrapcontent就指定为屏幕宽度的 4/5 (正方形)
         if (MeasureSpec.EXACTLY == heightmode) {
             mHeight = heightsize;
         } else {
@@ -126,7 +178,7 @@ public class GestureView extends View {
         }
 
         setMeasuredDimension(mWidth, mHeight);
-        // calculate the param of circle
+        // 计算每个圆的坐标
         prepareData();
     }
 
@@ -144,9 +196,9 @@ public class GestureView extends View {
             info.isSelect = false;
             list.add(info);
         }
-
+        // 初始化手势密码的列表，用于记录移动中的手势轨迹
         passwordList = new ArrayList<Integer>();
-
+        // 准备一个三角形的路径，用于绘制箭头
         path = new Path();
         path.moveTo( -mWidth * 1f / 90, - mWidth * 1f / 18);
         path.lineTo(0f, - mWidth * 7f / 90);
@@ -156,6 +208,7 @@ public class GestureView extends View {
     }
 
 
+    // 九宫格圆信息（索引，坐标，外圆半径，内圆半径，是否被选中）
     private class CircleInfo {
         public int id; // 索引
         public int x; // x坐标
@@ -164,6 +217,12 @@ public class GestureView extends View {
         public int inRadius; // 内圆半径
         public boolean isSelect; // 是否选中
 
+        /**
+         * 判断是否在圆内
+         * @param movex
+         * @param movey
+         * @return
+         */
         public boolean isContain(float movex, float movey) {
             return Math.sqrt(Math.pow(Math.abs(movex - x), 2) + Math.pow(Math.abs(movey - y), 2)) <= outRadius ? true : false;
         }
@@ -176,21 +235,26 @@ public class GestureView extends View {
         canvas.drawColor(Color.WHITE);
         for (CircleInfo item : list) {
             if (item.isSelect) {
+                // 选中绘制新深藏青色
                 canvas.drawCircle(item.x, item.y, item.outRadius, outdeepBluePaint);
                 canvas.drawCircle(item.x, item.y, item.inRadius, indeepBluePaint);
             } else {
+                // 不选中绘制霓虹蓝
                 canvas.drawCircle(item.x, item.y, item.outRadius, outlightBluePaint);
             }
         }
         for (int position : passwordList) {
             if (null != pre) {
+                // 绘制线段
                 canvas.drawLine(pre.x, pre.y, list.get(position).x, list.get(position).y, outdeepBluePaint);
             }
             pre = list.get(position);
         }
+        // 绘制手指和最后一个轨迹记录的连线
         if (null != pre) {
             canvas.drawLine(pre.x, pre.y, curX, curY, outdeepBluePaint);
         }
+        // 抬手后绘制的箭头信息
         for (int i = 0;isUP &&  i + 1 < passwordList.size(); i++) {
             CircleInfo startChild = list.get(passwordList.get(i));
             CircleInfo nextChild = list.get(passwordList.get(i + 1));
@@ -199,6 +263,7 @@ public class GestureView extends View {
             int dy = nextChild.y - startChild.y;
             //  计算角度
             int angle = (int) Math.toDegrees(Math.atan2(dy, dx)) + 90;
+            // 首先保存状态，然后移动画布，接着旋转画布，最后画箭头
             canvas.save();
             canvas.translate(startChild.x, startChild.y);
             canvas.rotate(angle);
@@ -216,9 +281,12 @@ public class GestureView extends View {
             case MotionEvent.ACTION_MOVE:
                 curX = event.getX();
                 curY = event.getY();
+                // 根据curX,curY可以确定position
                 int position = (int) (curX * 3 / mWidth) + (int) (curY * 3 / mWidth) * 3;
+                // 防止下标越界的问题
                 position = position < 0 ? 0 : position >= 8 ? 8 : position;
                 Log.i(TAG, "position = " + position);
+                // 如果轨迹中不包含position，接着需要判断是否在圆内
                 if (!passwordList.contains(position) && list.get(position).isContain(curX, curY)) {
                     list.get(position).isSelect = true;
                     passwordList.add(position);
@@ -227,11 +295,12 @@ public class GestureView extends View {
                 break;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
-                // compary the password
+                // 验证手势轨迹和原密码是否相同
                 int i = 0;
                 for (; i < rowPasswordlist.size() && i < passwordList.size(); i++) {
                     if (rowPasswordlist.get(i) != passwordList.get(i)) break;
                 }
+                // 长度要保持一致，同时i的值要等于原密码的长度
                 if (passwordList.size() == rowPasswordlist.size() && i == rowPasswordlist.size()) {
                     Toast.makeText(context, "success", Toast.LENGTH_LONG).show();
                 } else {
@@ -239,6 +308,7 @@ public class GestureView extends View {
                     outdeepBluePaint.setColor(Color.RED);
                     indeepBluePaint.setColor(Color.RED);
                 }
+                // 延时500ms，重置状态
                 postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -254,6 +324,7 @@ public class GestureView extends View {
                         invalidate();
                     }
                 }, 500);
+                // 记录抬起状态
                 isUP = true;
                 invalidate();
                 break;
